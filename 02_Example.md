@@ -46,3 +46,7 @@ $ npm i socket.io mime --save
 ```
 
 After installing the node packages, you should have a node_modules folder created for you with the dependencies.
+
+Socket.IO provides virtual channels out of the box.
+
+Event emmiters are a handy design pattern for organizing asynchronous logic.
