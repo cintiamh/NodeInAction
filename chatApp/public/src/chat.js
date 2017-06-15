@@ -1,4 +1,4 @@
-var socketio = rquire('socket.io');
+var socketio = require('socket.io');
 var io;
 var guestNumber = 1;
 var nickNames = {};
