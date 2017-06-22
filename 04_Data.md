@@ -302,3 +302,136 @@ query.on('end', function() {
 ```
 
 ## NOSQL databases
+
+* Performance first => Good for real time analytics or messaging.
+* Don't require data schemas predefined.
+
+### Redis
+
+* Simple data => No long term access.
+* Stores data in RAM, logging changes to it to disk.
+* Limited storage space => But quick data manipulation.
+* Disk log can be used to restore data.
+
+https://redis.io/commands
+
+Redis tutorial: http://try.redis.io/
+
+Node module for Redis: https://github.com/NodeRedis/node_redis
+```
+$ npm install redis
+```
+
+```javascript
+var redis = require('redis');
+var client = redis.createClient(6379, '127.0.0.1');
+client.on('error', function(err) {
+  console.log('Error ' + err);
+});
+```
+
+#### Manipulating data in Redis
+```javascript
+client.set('color', 'red', redis.print);
+client.get('color', function(err, value) {
+  if (err) throw err;
+  console.log('Got: ' + value);
+});
+```
+
+#### Storing data in elements of a Redis hash table
+```javascript
+client.hmset('camping', {
+  'shelter': '2-person tent',
+  'cooking': 'campstove'
+}, redis.print);
+client.hget('camping', 'cooking', function(err, value) {
+  if (err) throw err;
+  console.log('Will be cooking with: ' + value);
+});
+client.hkeys('camping', function(err, keys) {
+  if (err) throw err;
+  keys.forEach(function(key, i) {
+    console.log(' ' + key);
+  });
+});
+```
+
+#### Sorting and retrieving data using the list
+```javascript
+client.lpush('tasks', 'Paint the bikeshed red.', redis.print);
+client.lpush('tasks', 'Paint the bikeshed green.', redis.print);
+client.lrange('tasks', 0, -1, function(err, items) {
+  if (err) throw err;
+  items.forEach(function(item, i) {
+    console.log('  ' + item);
+  });
+});
+```
+
+A Redis list is an ordered list of strings.
+
+#### Storing and retrieving data using sets
+```javascript
+client.sadd('ip_addresses', '204.10.37.96', redis.print);
+client.sadd('ip_addresses', '204.10.37.96', redis.print);
+client.sadd('ip_addresses', '72.32.231.8', redis.print);
+client.smembers('ip_addresses', function(err, members) {
+  if (err) throw err;
+  console.log(members);
+});
+```
+
+* A Redis set is an unordered group of strings.
+* Better retrieval performance than lists.
+* Sets must contain unique elements.
+
+#### Delivering data with channels
+
+Channels are data-delivery mechanisms that provides publish/subscribe functionality.
+
+A simple chat server implemented with Redis pub/sub functionality:
+```javascript
+var net = require('net');
+var redis = require('redis');
+
+var server = net.createServer(function(socket) {
+  var subscriber;
+  var publisher;
+
+  socket.on('connect', function() {
+    subscriber = redis.createClient();
+    subscriber.subscribe('main_chat_room');
+
+    subscriber.on('message', function(channel, message) {
+      socket.write('Channel ' + channel + ': ' + message);
+    });
+
+    publisher = redis.createClient();
+  });
+
+  socket.on('data', function(data) {
+    publisher.publish('main_chat_room', data);
+  });
+
+  socket.on('end', function() {
+    subscriber.unsubscribe('main_chat_room');
+    subscriber.end();
+    publisher.end();
+  });
+});
+server.listen(3000);
+```
+
+Redis for production: https://github.com/redis/hiredis-node
+
+```
+$ npm install hiredis
+```
+
+You may have to recompile hiredis when upgrading Node.js.
+```
+$ npm rebuild hiredis
+```
+
+### MongoDB
