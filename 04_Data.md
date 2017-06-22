@@ -435,3 +435,185 @@ $ npm rebuild hiredis
 ```
 
 ### MongoDB
+
+MongoDB is a general-purpose nonrelational database.
+
+A MongoDB database stores documents in collections.
+
+Each document could conceivably have a different schema.
+
+https://github.com/mongodb/node-mongodb-native
+
+```
+$ npm install mongodb
+```
+
+#### Connecting to MongoDB
+
+```javascript
+var mongodb = require('mongodb');
+var server = new mongodb.Server('127.0.0.1', 27017, {});
+var client = new mongodb.Db('mydatabase', server, {w: 1});
+```
+
+#### Accessing a MongoDB collection
+
+```javascript
+client.open(function(err) {
+  if (err) throw err;
+  client.collection('test_insert', function(err, collection) {
+    if (err) throw err;
+    console.log('We are now able to perform queries');
+  });
+});
+```
+
+#### Inserting a document into a collection
+
+```javascript
+collection.insert(
+  {
+    "title": "I like cake",
+    "body": "It is quite good"
+  },
+  { safe: true },
+  function(err, documents) {
+    if (err) throw err;
+    console.log('Document ID is: ' + documents[0]._id);
+  }
+)
+```
+
+##### Safe Mode
+
+`{ safe: true }` => indicates that you want the DB operation to complete before executing the callback.
+
+Document identifiers from MongoDB are encoded in binary JSON (BSON).
+BSON is a data interchange format primarily used by MongoDB instead of JSON to move data to and from the MongoDB server.
+In most cases is more space efficient than JSON and can be parsed more quickly.
+
+#### Updating a MongoDB document
+
+```javascript
+var _id = new client.bson_serializer
+                    .ObjectID('4e650d344ac74b5a01000001');
+collection.update(
+  {_id: _id},
+  {$set: {"title": "I ate too much cake"}},
+  {safe: true},
+  function(err) {
+    if (err) throw err;
+  }
+);
+```
+
+#### Searching for documents
+
+```javascript
+collection.find({"title": "I like cake"}).toArray(
+  function(err, results) {
+    if (err) throw err;
+    console.log(results);
+  }
+);
+```
+
+#### Delete documents
+
+```javascript
+var _id = new client
+              .bson_serializer
+              .ObjectID('4e6513f0730d319501000001');
+collection.remove({_id: _id}, {safe: true}, function(err) {
+  if (err) throw err;
+});
+```
+
+### Mongoose
+
+Mongoose is a Node module that makes using MongoDB painless.
+
+http://mongoosejs.com/
+
+* schema hierarchies
+* middleware
+* validation
+
+```
+$ npm install mongoose
+```
+
+#### Opening and closing a connection
+
+Establish a MongoDB connection:
+```javascript
+var mongoose = require('mongoose');
+var db = mongoose.connect('mongodb://localhost/tasks');
+```
+
+Terminate your Mongoose-created connection:
+```javascript
+mongoose.disconnect();
+```
+
+#### Registering a schema
+
+```javascript
+var Schema = mongoose.Schema;
+var Tasks = new Schema({
+  project: String,
+  description: String
+});
+mongoose.model('Task', Tasks);
+```
+
+http://mongoosejs.com/docs/schematypes.html
+
+#### Adding a task
+
+```javascript
+var Task = mongoose.model('Task');
+var task = new Task();
+task.project = 'Bikeshed';
+task.description = 'Paint the bikeshed red.';
+task.save(function(err) {
+  if (err) throw err;
+  console.log('Task saved.');
+});
+```
+
+#### Searching for a document
+
+```javascript
+var Task = mongoose.model('Task');
+Task.find({'project': 'Bikeshed'}, function(err, tasks) {
+  for (var i = 0; i < tasks.length; i++) {
+    console.log('ID:' + tasks[i]._id);
+    console.log(tasks[i].description);
+  }
+});
+```
+
+#### Updating a document
+
+```javascript
+var Task = mongoose.model('Task');
+Task.update(
+  { _id: '4e6513f0730d319501000001' },
+  { description: 'Paint the bikeshed green.' },
+  { multi: false },
+  function(err, rows_updated) {
+    if (err) throw err;
+    console.log('Updated');
+  }
+)
+```
+
+#### Removing a document
+
+```javascript
+var Task = mongoose.model('Task');
+Task.findById('4e65b3dce1592f7d08000001', function(err, task) {
+  task.remove();
+});
+```
