@@ -162,3 +162,51 @@ var server = http.createServer(function(req, res) {
 ```
 
 ## Accepting user input from forms
+
+### Handling submitted form fields
+
+`Content-Type`:
+* `application/x-www-form-urlencoded` - The default for HTML forms
+* `multipart/form-data` - Used when the form contain files
+
+To handle file uploads properly and accept the file's content, you need to set
+the `enc-type` attribute to `multipart/form-data`, a MIME type suited for BLOBs
+(binary large objects).
+
+* use formidable.
+
+Formidable's `progress` event emits the number of bytes received and bytes expected.
+
+## Securing your application with https
+
+Data sent using HTTPS is encrypted. (HTTP + TLS/SSL)
+
+Self-signed certificate: just for development (using OpenSSL)
+
+Generate a private key:
+```
+$ openssl genrsa 1024 > key.pem
+```
+
+Generate a certificate using the private key:
+```
+openssl req -x509 -new -key key.pem > key-cert.pem
+```
+
+Keys are usually kept in `~/.ssh`.
+The following code will create a simple HTTPS server using your keys.
+
+```
+var https = require('https');
+var fs = require('fs');
+
+var options = {
+  key: fs.readFileSync('./key.pem'),
+  cert: fs.readFileSync('./key-cert.pem')
+};
+
+https.createServer(options, function(req, res) {
+  res.writeHead(200);
+  res.end('Hello World');
+}).listen(3000);
+```
